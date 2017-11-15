@@ -49,8 +49,8 @@ namespace Bootstrap1
             //Plugins.Add(new CorsFeature());
 
             container.Register<IDbConnectionFactory>(c => new OrmLiteConnectionFactory(
-//                                                         AppSettings.GetString("ConnectionString"), MySqlDialect.Provider));
-                                                         AppSettings.GetString("testDb"), MySqlDialect.Provider));
+                                                         AppSettings.GetString("ConnectionString"), MySqlDialect.Provider));
+//                                                         AppSettings.GetString("testDb"), MySqlDialect.Provider));
 
             using (var db = container.Resolve<IDbConnectionFactory>().Open())
             {
@@ -117,9 +117,12 @@ namespace Bootstrap1
                 }
             }
 
+            // this is used to wire the dependency for sending SMS service according to configuration
+            container.Register<SmsSendingService>(
+                c => (SmsSendingService) GetInstance(AppSettings.GetString("SmsServiceClassToUse")));
+
 //            SmsSendingService obj = (SmsSendingService) GetInstance("Bootstrap1.ServiceModel.DefaultSmsSendingService");
-//            container.RegisterAutoWiredAs<(castedObject.GetType(), SmsSendingService>();
-            container.RegisterAutoWiredAs<DefaultSmsSendingService, SmsSendingService>();
+//            container.RegisterAutoWiredAs<DefaultSmsSendingService, SmsSendingService>();
 //            container.RegisterAutoWiredAs<IdleSmsSendingService, SmsSendingService>();
 
             JsConfig<DateTime>.SerializeFn = time => new DateTime(time.Ticks, DateTimeKind.Local).ToString("o");
