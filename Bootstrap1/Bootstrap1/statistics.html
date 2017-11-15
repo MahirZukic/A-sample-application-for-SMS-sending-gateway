@@ -1,0 +1,161 @@
+<!--
+title: Aggregate statistics
+-->
+
+<p>
+    This is the stats page.
+</p>
+
+<div class="container" style="padding:0 0 0 0px">
+    <div class="form-group row">
+        <div class="col-3">
+            <label class="col-12 col-form-label">From</label>
+            <input type="text" class="form-control" id="from" name="From" placeholder="mm/dd/YYYY" value="" autocomplete="off">
+        </div>
+        <div class="col-3">
+            <label class="col-12 col-form-label">To</label>
+            <input type="text" class="form-control" id="to" name="To" placeholder="mm/dd/YYYY" value="" autocomplete="off">
+        </div>
+        <div class="col-3">
+            <label class="col-12 col-form-label">Countries</label>
+            <!--            <input type="text" class="form-control" id="countries" name="Countries" placeholder="List of countries (Blank = all)" value="" autocomplete="off">-->
+            <select id="countries" multiple="multiple" data-bind="value: selectedMCCs, source: countries"></select>
+        </div>
+        <div class="col-3">
+            <label class="col-12 col-form-label">&nbsp;</label>
+            <button id="search" name="Search" class="col btn-primary">Search</button>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label">Results</label>
+        <div class="col-12">
+            <div id="result"></div>
+        </div>
+    </div>
+</div>
+
+{{
+`<script>
+     var countriesCache = localStorage.getItem('mittosms_countries') && JSON.parse(localStorage.getItem('mittosms_countries')) && JSON.parse(localStorage.getItem('mittosms_countries')).countries;
+     var viewModel = kendo.observable({
+         selectedMCCs: [],
+         countries: countries
+     });
+     if (!!localStorage.getItem('mittosms_countries') && new Date(JSON.parse(localStorage.getItem('mittosms_countries')).expires) > new Date()) {
+         viewModel.countries = JSON.parse(localStorage.getItem('mittosms_countries')).countries;
+     } else {
+         $.ajax({
+                 url: '/countries',
+                 method: 'GET',
+                 contentType: 'application/json'
+             }).done(function(results) {
+                 viewModel.countries = results.Result;
+                 localStorage.setItem('mittosms_countries', JSON.stringify(
+                     {
+                         // cache the countries, cache expires the next day
+                         expires: new Date(new Date() - 0 + 3600 * 24 * 1000),
+                         countries: results.Result
+                     }));
+                 countriesCache = results.Result;
+             })
+             .fail(function(error) {
+             });
+     }
+     $('#countries').kendoMultiSelect({
+         placeholder: 'Select Countries...  (Blank = all)',
+         dataTextField: 'Name',
+         dataValueField: 'MCC',
+         autoBind: false,
+         dataSource: countries,
+     });
+     kendo.bind($("#countries"), viewModel);
+     $('#from,#to,#countries').keydown(function(event) {
+         if (event.which == 13) {
+             $('#search').click();
+         }
+     });
+     $(function() {
+         $('#from,#to').kendoDatePicker();
+     });
+     $('#search').click(function () {
+         var fromData = $('#from').val();
+         var toData = $('#to').val();
+         var countriesData = viewModel.selectedMCCs.map(function(item){return item.MCC}).join(',');
+         if (fromData && toData) {
+             var dataSource = new kendo.data.DataSource({
+                 batch: true,
+                 transport: {
+                     read:  {
+                         url: "/viewstatistics",
+                         dataType: "json" //"jsonp" is required for cross-domain requests; use "json" for same-domain requests
+                     },
+                 },
+                 pageSize: 20,
+                 page: 1
+             });
+             $("#result").kendoGrid({
+                 scrollable: true,
+                 sortable: true,
+                 pageable: true,
+                 columns: [
+                     { field: "Day" },
+                     { field: "MCC" },
+                     { field: "PricePerSMS", title: "Price per SMS", format: "{0:0.000}" },
+                     { field: "Count" },
+                     { field: "TotalPriceForTheDay", title: "Total price for the day", format: "{0:0.000}", width:250 },
+                 ],
+                 dataSource: dataSource
+             });
+             dataSource.fetch(function() {
+                 console.log(dataSource.at(0));
+             });
+             // add logic for getting results here (ajax call to service)
+             $.ajax({
+                     url: '/viewstatistics',
+                     method: 'GET',
+                     data: { DateTimeFrom: fromData, DateTimeTo: toData, MCC: countriesData },
+                     dataType: 'html',
+                     contentType : 'application/json'
+                 }).done(function(results) {
+                     // show the results in the data grid
+                     var result = $.parseJSON(results).Result || [];
+                     $.each(result, function(idx, item) {
+                         item.Day = new Date(item.Day).toDateString();
+                         var matchingMCC = _.find(countriesCache,
+                             function(x) {
+                                 return x.MCC === item.MCC;
+                             });
+                         if (matchingMCC) {
+                             item.MCC += ' (' + matchingMCC.Name + ')';
+                         }
+                     });
+                     if (result.length > 0) {
+                         toastr.success('Succesfully found SMS statistics.');
+                     } else {
+                         toastr.info('There were no SMS statistics for this this period or this filter.');
+                     }
+                     $("#result").kendoGrid({
+                         scrollable: true,
+                         sortable: true,
+                         pageable: true,
+                         columns: [
+                             { field: "Day" },
+                             { field: "MCC" },
+                             { field: "PricePerSMS", title: "Price per SMS", format: "{0:0.000}" },
+                             { field: "Count" },
+                             { field: "TotalPriceForTheDay", title: "Total price for the day", format: "{0:0.000}", width:250 },
+                         ],
+                         dataSource: result
+                     });
+                 })
+                 .fail(function(error) {
+                     toastr.error('Could not find SMS messages.');
+                 });
+         } else {
+             toastr.error('Not all data required is filled in.');
+         }
+     });
+ </script>
+` | appendTo: scripts
+}}

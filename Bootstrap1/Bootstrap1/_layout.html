@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ title }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="Mitto AG Test project">
+    <meta name="author" content="Mahir Zukic">
+
+    <!--{{ ifDebug | select: <script>{ '/js/hot-loader.js' | includeFile }</script> }}-->
+    <link rel="stylesheet" href="/assets/css/bootstrap.css">
+    <link rel="stylesheet" href="/assets/css/default.css">
+
+    <!-- Common Kendo UI CSS for web widgets and widgets for data visualization. -->
+    <link href="/assets/css/kendo.common.min.css" rel="stylesheet" />
+
+    <!-- (Optional) RTL CSS for Kendo UI widgets for the web. Include only in right-to-left applications. -->
+    <link href="/assets/css/kendo.rtl.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- Default Kendo UI theme CSS for web widgets and widgets for data visualization. -->
+    <link href="/assets/css/kendo.default.min.css" rel="stylesheet" />
+
+    <!-- (Optional) Kendo UI Hybrid CSS. Include only if you will use the mobile devices features. -->
+    <link href="/assets/css/kendo.default.mobile.min.css" rel="stylesheet" type="text/css" />
+
+    <link href="/assets/css/toastr.css" rel="stylesheet" type="text/css"  />
+<!--    possibly offload this to CDN-->
+<!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" type="text/css" />-->
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a title="ServiceStack WebApp Starter" class="navbar-brand" href="/" style="width:220px;">
+                <img src="/assets/img/logo.png" width="42" height="32" class="d-inline-block align-top" alt="" style="float:left;margin:0 10px 0 0">
+                <h3>Mitto SMS factory</h3>
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive"
+                aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          {{ 'menu' | partial }}
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-12 text-center">
+          <h1 class="mt-5">{{ title }}</h1>
+          {{ page }}
+        </div>
+      </div>
+    </div>
+
+    <h4 style="position:absolute; top: 70px; width: 100%; text-align: center">
+      <a href="http://templates.servicestack.net">Learn about ServiceStack Templates</a>
+    </h4>
+
+    <script src="/assets/js/jquery.min.js"></script>
+    <!-- Kendo UI combined JavaScript -->
+    <script src="/assets/js/kendo.all.min.js"></script>
+<!--    <script src="https://cdnjs.com/libraries/popper.js"></script>-->
+    <script src="/assets/js/bootstrap.min.js"></script>
+    <script src="/assets/js/lodash.min.js"></script>
+    <script src="assets/js/toastr.js"></script>
+<!--    possibly offload this to CDN-->
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>-->
+    <script src="/assets/js/default.js"></script>
+
+    {{ scripts | raw }}
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!--
+title: View SMS
+-->
+
+<p>
+    This is the page for viewing SMSes.
+</p>
+
+<div class="container" style="padding:0 0 0 0px">
+    <div class="form-group row">
+        <div class="col">
+            <label class="col-12 col-form-label">From</label>
+            <input type="text" class="form-control" id="from" name="From" placeholder="mm/dd/YYYY" value="" autocomplete="off">
+        </div>
+        <div class="col">
+            <label class="col-12 col-form-label">To</label>
+            <input type="text" class="form-control" id="to" name="To" placeholder="mm/dd/YYYY" value="" autocomplete="off">
+        </div>
+        <div class="col">
+            <label class="col-12 col-form-label">Skip</label>
+            <input type="text" class="form-control" id="skip" name="Skip" placeholder="Skip n (blank = 0)" value="" autocomplete="off">
+        </div>
+        <div class="col">
+            <label class="col-12 col-form-label">Take</label>
+            <input type="text" class="form-control" id="take" name="Take" placeholder="Take m (blank = 10)" value="" autocomplete="off">
+        </div>
+        <div class="col">
+            <label class="col-12 col-form-label">&nbsp;</label>
+            <button id="search" name="Search" class="col btn-primary">Search</button>
+        </div>
+    </div>
+
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label">Results:</label>
+        <div class="col-12">
+            <div id="result"></div>
+        </div>
+    </div>
+</div>
+    
+{{
+`<script>
+     var countriesCache = localStorage.getItem('mittosms_countries') && JSON.parse(localStorage.getItem('mittosms_countries')) && JSON.parse(localStorage.getItem('mittosms_countries')).countries;
+     if (!localStorage.getItem('mittosms_countries') || new Date(JSON.parse(localStorage.getItem('mittosms_countries')).expires) < new Date()) {
+         $.ajax({
+                 url: '/countries',
+                 method: 'GET',
+                 contentType: 'application/json'
+             }).done(function(results) {
+                 localStorage.setItem('mittosms_countries', JSON.stringify(
+                     {
+                         // cache the countries, cache expires the next day
+                         expires: new Date(new Date() - 0 + 3600 * 24 * 1000),
+                         countries: results.Result
+                     }));
+                 countriesCache = results.Result;
+             })
+             .fail(function(error) {
+             });
+     }
+     $('#from,#to,#skip,#take').keydown(function(event) {
+         if (event.which == 13) {
+             $('#search').click();
+         }
+     });
+     $(function() {
+         $('#from,#to').kendoDatePicker();
+     });
+     $('#search').click(function () {
+         var fromData = $('#from').val();
+         var toData = $('#to').val();
+         var skipData = $('#skip').val();
+         var takeData = $('#take').val();
+         if (fromData && toData) {
+             // add logic for getting results here (ajax call to service)
+             $.ajax({
+                     url: '/sms/sent',
+                     method: 'GET',
+                     data: { DateTimeFrom: fromData, DateTimeTo: toData, Skip: skipData, Take: takeData },
+                     dataType: 'html',
+                     contentType : 'application/json'
+                 }).done(function(results) {
+                     // show the results in the data grid
+                     var result = $.parseJSON(results);
+                     $.each(result.SentSMSes, function(idx, item) {
+                         item.DateTime = new Date(item.DateTime).toISOString();
+                         var matchingMCC = _.find(countriesCache,
+                             function(x) {
+                                 return x.MCC === item.MCC;
+                             });
+                         if (matchingMCC) {
+                             item.MCC += ' (' + matchingMCC.Name + ')';
+                         }
+                     });
+                     if (result.TotalCount > 0) {
+                         toastr.success('Succesfully found SMS messages.');
+                     } else {
+                         toastr.success('There were no SMS messages sent in this period and this filter.');
+                     }
+                     $("#result").kendoGrid({
+                         scrollable: true,
+                         sortable: true,
+                         pageable: true,
+                         columns: [
+                             { field: "DateTime", title: "Date and time" },
+                             { field: "MCC" },
+                             { field: "NumberFrom", title: "Origin number" },
+                             { field: "NumberTo", title: "Destination number" },
+                             { field: "Price", format: "{0:0.000}" },
+                             { field: "State" },
+                         ],
+                         dataSource: result.SentSMSes
+//                         dataSource: {
+//                             transport: {
+//                                 read: "/sms/sent"
+//                             },
+//                             schema: {
+//                                 data: "data"
+//                             }
+//                         }
+                     });
+                 })
+                 .fail(function(error) {
+                     toastr.error('Could not find SMS messages.');
+                 });
+         } else {
+             alert('Not all data required is filled in.');
+             toastr.error('Not all data required is filled in.');
+         }
+     });
+ </script>
+` | appendTo: scripts
+}}

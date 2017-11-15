@@ -1,0 +1,96 @@
+<!--
+title: Homepage || Send SMS
+-->
+
+<p class="lead">
+    Complete with page layout, menu partial and responsive navigation!
+    <br />
+    This is the page for sending SMSes.
+</p>
+
+<p>
+    This site was built using these technologies:
+</p>
+<ul class="list-unstyled">
+  <li>Bootstrap 4.0.0-beta</li>
+  <li>jQuery 3.2.1</li>
+  <li>Kendo UI v2017.3.1026</li>
+  <li>Lodash v4.17.4 (Underscore.js v1.8.3)</li>
+  <li>Toastr v2.1.3 (for success/error messages)</li>
+</ul>
+
+<div class="container" style="padding:0 0 0 0px">
+    <div class="form-group row">
+        <div class="col-3">
+            <label class="col-sm-2 col-form-label">From</label>
+            <input type="text" class="form-control" id="from" name="From" placeholder="+49 8001888444" value="+41 31 359 41 11" autocomplete="off">
+        </div>
+        <div class="col-3">
+            <label class="col-sm-2 col-form-label">To</label>
+            <input type="text" class="form-control" id="to" name="To" placeholder="+41 31 359 41 11" value="+49 8001888444" autocomplete="off">
+        </div>
+        <div class="col-3">
+            <label class="col-sm-2 col-form-label">Text</label>
+            <input type="text" class="form-control" id="text" name="Text" placeholder="Text" value="This is a sample message" autocomplete="off">
+        </div>
+        <div class="col-3">
+            <label class="col-sm-2 col-form-label">&nbsp;</label>
+            <button id="send" name="Send"  class="col btn-primary">Send</button>
+        </div>
+    </div>
+</div>
+
+{{
+`<script>
+$('#from,#to,#text').keydown(function(event) {
+    if (event.which == 13) {
+        $('#send').click();
+    }
+});
+$('#send').click(function () {
+  // trim the numbers
+  var fromData = $('#from').val();
+  var toData = $('#to').val();
+  var textData = $('#text').val();
+  if (fromData && toData && textData) {
+    // add logic for getting results here (ajax call to service)
+      $.ajax({
+              url: '/sms/send',
+              method: 'POST',
+              data: { NumberFrom: fromData, NumberTo: toData, Text: textData },
+              dataType: 'html',
+//              contentType : 'application/json'
+              contentType : 'application/x-www-form-urlencoded'
+          }).done(function(results) {
+              var result = $.parseJSON(results).Result;
+              if (result === 'Success') {
+                  toastr.success('You have succesfully sent an SMS.');
+              } else {
+                  toastr.error('Could not send an SMS.');
+              }
+          })
+          .fail(function(error) {
+              toastr.error('Could not send an SMS.');
+          });
+  } else {
+      toastr.error('Not all data required is filled in.');
+  }
+  if (!localStorage.getItem('mittosms_countries') || new Date(JSON.parse(localStorage.getItem('mittosms_countries')).expires) < new Date()) {
+      $.ajax({
+              url: '/countries',
+              method: 'GET',
+              contentType: 'application/json'
+          }).done(function(results) {
+              localStorage.setItem('mittosms_countries', JSON.stringify(
+                  {
+                      // cache the countries, cache expires the next day
+                      expires: new Date(new Date() - 0 + 3600 * 24 * 1000),
+                      countries: results.Result
+                  }));
+          })
+          .fail(function(error) {
+          });
+  }
+});
+</script>` | appendTo: scripts
+}}
